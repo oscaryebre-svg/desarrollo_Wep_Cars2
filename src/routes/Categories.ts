@@ -6,13 +6,6 @@ import { Category } from "../entities/Categories";
 
 const router = express.Router();
 
-// Traducción de src/routes/categorias.ts de la maestra al contexto de este
-// proyecto. Cambios respecto al original:
-//   - Tabla GAME_CATEGORIES en lugar de cat_categoria.
-//   - Una categoría está activa cuando `Deleted-at` es NULL
-//     (la maestra usa la bandera actvCat).
-//   - El recurso se monta en /api/categories (nombre usado en este proyecto).
-
 // Lista las categorías activas.
 router.get("/", async (req, res) => {
   try {

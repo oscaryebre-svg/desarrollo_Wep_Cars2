@@ -196,7 +196,7 @@ router.delete("/", async (req, res) => {
       "UPDATE GAME_CATEGORIES SET `Deleted-at` = NOW() WHERE `Categori-id` = ? AND `Deleted-at` IS NULL",
       [id],
     );
-
+1
     if (resultado.affectedRows === 0) {
       return res.status(404).json({
         mensaje: "Categoria no encontrada o eliminada antes",

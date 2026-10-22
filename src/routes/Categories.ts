@@ -35,11 +35,13 @@ router.get("/todos", async (req, res) => {
     const categorias = await categoriaRepository.find();
 
     res.json(categorias);
-  } catch (error) {
+  } 
+  catch (error) {
     console.error(error);
 
     res.status(500).json({
       mensaje: "Error al consultar las categorias",
+      error:error
     });
   }
 });

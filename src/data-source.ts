@@ -14,5 +14,5 @@ export const AppDataSource = new DataSource({
   entities: [Category],
   // La BD manda: no dejamos que TypeORM cree o altere tablas.
   synchronize: false,
-  logging: true,
+  logging: true,//modo developer
 });

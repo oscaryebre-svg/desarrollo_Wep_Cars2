@@ -2,10 +2,10 @@
   "name": "games-cars",
   "version": "1.0.0",
   "description": "API REST de catálogo de videojuegos/coches con Node.js + Express + MySQL. Incluye CRUD completo, borrado lógico, restauración y búsquedas por nombre/descripción.",
-  "main": "src/app.js",
+  "main": "src/app.ts",
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "node --watch src/app.js"
+    "start": "ts-node src/app.ts",
+    "dev": "node --watch -r ts-node/register src/app.ts"
   },
   "keywords": [
     "express",

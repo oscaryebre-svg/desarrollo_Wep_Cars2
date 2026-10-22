@@ -18,6 +18,14 @@
   "license": "MIT",
   "dependencies": {
     "express": "^4.21.2",
-    "mysql2": "^3.11.5"
+    "mysql2": "^3.11.5",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^1.1.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^26.6.5",
+    "ts-node": "10.9.2",
+    "typescript": "6.0.3"
   }
 }

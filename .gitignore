@@ -1,6 +1,9 @@
 # Dependencias
 node_modules/
 
+# Compilado de TypeScript
+dist/
+
 # Variables de entorno y credenciales
 .env
 .env.*
@@ -16,3 +19,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Python
+__pycache__/
+*.pyc

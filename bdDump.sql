@@ -75,64 +75,6 @@ COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 
 --
--- Table structure for table `FEATURES`
---
-
-DROP TABLE IF EXISTS `FEATURES`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `FEATURES` (
-  `Features-id` int(11) NOT NULL,
-  `Feature-name` varchar(100) NOT NULL,
-  `Feature-value` varchar(250) DEFAULT NULL,
-  `Create-at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `Updated-at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `Deleted-at` timestamp NULL DEFAULT NULL,
-  `Created-by` varchar(250) DEFAULT NULL,
-  `Updated-by` varchar(250) DEFAULT NULL,
-  PRIMARY KEY (`Features-id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `FEATURES`
---
-
-SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
-LOCK TABLES `FEATURES` WRITE;
-/*!40000 ALTER TABLE `FEATURES` DISABLE KEYS */;
-INSERT INTO `FEATURES` VALUES
-(1,'Mundo abierto','Si, mapa de Mexico','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(2,'Motor grafico','ForzaTech Engine','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(3,'Graficos','4K HDR','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(4,'Jugadores','Multijugador online','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(5,'Clima dinamico','Si, 4 estaciones','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(6,'Modo de juego','Carreras callejeras','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(7,'Ciclo dia/noche','Si','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(8,'Personalizacion','Visual y de rendimiento','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(9,'Persecuciones','Policia activa','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(10,'Graficos','4K, Frostbite Engine','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(11,'Simulacion','Conduccion realista','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(12,'Modo foto','Modo Scapes','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(13,'Multijugador','Modo Sport online','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(14,'Catalogo de autos','Mas de 400 vehiculos','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(15,'Realidad virtual','Soporte PlayStation VR2','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(16,'Simulacion','Fisica muy realista','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(17,'Mods','Amplio soporte de mods','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(18,'Realidad virtual','Si, compatible VR','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(19,'Multijugador','Servidores dedicados','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(20,'Telemetria','Avanzada para analisis','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(21,'Mundo abierto','Si, Islas de Hawai','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(22,'Actividades','Pruebas de licencia','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(23,'Personalizacion','Vehiculos y tuning','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(24,'Modos','PvP y cooperativo','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(25,'Mapa','Calles, tierra y mar','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL);
-/*!40000 ALTER TABLE `FEATURES` ENABLE KEYS */;
-UNLOCK TABLES;
-COMMIT;
-SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
-
---
 -- Table structure for table `GAME-CARS`
 --
 
@@ -190,124 +132,62 @@ COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 
 --
--- Table structure for table `GAME-FEATURES`
+-- Table structure for table `GAMES-FEATURES`
 --
 
-DROP TABLE IF EXISTS `GAME-FEATURES`;
+DROP TABLE IF EXISTS `GAMES-FEATURES`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `GAME-FEATURES` (
-  `Game-feature-id` int(11) NOT NULL AUTO_INCREMENT,
-  `id-game-car` int(11) NOT NULL,
+CREATE TABLE `GAMES-FEATURES` (
   `Features-id` int(11) NOT NULL,
+  `id-game-car` int(11) DEFAULT NULL,
+  `Feature-name` varchar(100) NOT NULL,
+  `Feature-value` varchar(250) DEFAULT NULL,
   `Create-at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `Updated-at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `Deleted-at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`Game-feature-id`),
-  UNIQUE KEY `uq_game_feature` (`id-game-car`,`Features-id`),
-  KEY `fk_gamefeatures_feature` (`Features-id`),
-  CONSTRAINT `fk_gamefeatures_feature` FOREIGN KEY (`Features-id`) REFERENCES `FEATURES` (`Features-id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_gamefeatures_game` FOREIGN KEY (`id-game-car`) REFERENCES `games` (`id-game-car`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `Created-by` varchar(250) DEFAULT NULL,
+  `Updated-by` varchar(250) DEFAULT NULL,
+  PRIMARY KEY (`Features-id`),
+  KEY `GAMES_FEATURES_games_FK` (`id-game-car`),
+  CONSTRAINT `GAMES_FEATURES_games_FK` FOREIGN KEY (`id-game-car`) REFERENCES `games` (`id-game-car`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `GAME-FEATURES`
+-- Dumping data for table `GAMES-FEATURES`
 --
 
 SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
-LOCK TABLES `GAME-FEATURES` WRITE;
-/*!40000 ALTER TABLE `GAME-FEATURES` DISABLE KEYS */;
-INSERT INTO `GAME-FEATURES` VALUES
-(1,1,1,'2026-10-15 23:59:30',NULL),
-(2,1,2,'2026-10-15 23:59:30',NULL),
-(3,1,3,'2026-10-15 23:59:30',NULL),
-(4,1,4,'2026-10-15 23:59:30',NULL),
-(5,1,5,'2026-10-15 23:59:30',NULL),
-(6,2,6,'2026-10-15 23:59:30',NULL),
-(7,2,7,'2026-10-15 23:59:30',NULL),
-(8,2,8,'2026-10-15 23:59:30',NULL),
-(9,2,9,'2026-10-15 23:59:30',NULL),
-(10,2,10,'2026-10-15 23:59:30',NULL),
-(11,3,11,'2026-10-15 23:59:30',NULL),
-(12,3,12,'2026-10-15 23:59:30',NULL),
-(13,3,13,'2026-10-15 23:59:30',NULL),
-(14,3,14,'2026-10-15 23:59:30',NULL),
-(15,3,15,'2026-10-15 23:59:30',NULL),
-(16,4,16,'2026-10-15 23:59:30',NULL),
-(17,4,17,'2026-10-15 23:59:30',NULL),
-(18,4,18,'2026-10-15 23:59:30',NULL),
-(19,4,19,'2026-10-15 23:59:30',NULL),
-(20,4,20,'2026-10-15 23:59:30',NULL),
-(21,5,21,'2026-10-15 23:59:30',NULL),
-(22,5,22,'2026-10-15 23:59:30',NULL),
-(23,5,23,'2026-10-15 23:59:30',NULL),
-(24,5,24,'2026-10-15 23:59:30',NULL),
-(25,5,25,'2026-10-15 23:59:30',NULL);
-/*!40000 ALTER TABLE `GAME-FEATURES` ENABLE KEYS */;
-UNLOCK TABLES;
-COMMIT;
-SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
-
---
--- Table structure for table `GAME-TRACKS`
---
-
-DROP TABLE IF EXISTS `GAME-TRACKS`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `GAME-TRACKS` (
-  `Game-track-id` int(11) NOT NULL AUTO_INCREMENT,
-  `id-game-car` int(11) NOT NULL,
-  `Tracks-id` int(11) NOT NULL,
-  `Create-at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `Deleted-at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`Game-track-id`),
-  UNIQUE KEY `uq_game_track` (`id-game-car`,`Tracks-id`),
-  KEY `fk_gametracks_track` (`Tracks-id`),
-  CONSTRAINT `fk_gametracks_game` FOREIGN KEY (`id-game-car`) REFERENCES `games` (`id-game-car`) ON DELETE CASCADE,
-  CONSTRAINT `fk_gametracks_track` FOREIGN KEY (`Tracks-id`) REFERENCES `TRACKS` (`Tracks-id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `GAME-TRACKS`
---
-
-SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
-LOCK TABLES `GAME-TRACKS` WRITE;
-/*!40000 ALTER TABLE `GAME-TRACKS` DISABLE KEYS */;
-INSERT INTO `GAME-TRACKS` VALUES
-(1,1,1,'2026-10-15 23:59:30',NULL),
-(2,1,2,'2026-10-15 23:59:30',NULL),
-(3,1,3,'2026-10-15 23:59:30',NULL),
-(4,1,4,'2026-10-15 23:59:30',NULL),
-(5,1,5,'2026-10-15 23:59:30',NULL),
-(6,1,6,'2026-10-15 23:59:30',NULL),
-(7,1,30,'2026-10-15 23:59:30',NULL),
-(8,2,7,'2026-10-15 23:59:30',NULL),
-(9,2,8,'2026-10-15 23:59:30',NULL),
-(10,2,9,'2026-10-15 23:59:30',NULL),
-(11,2,10,'2026-10-15 23:59:30',NULL),
-(12,2,11,'2026-10-15 23:59:30',NULL),
-(13,3,12,'2026-10-15 23:59:30',NULL),
-(14,3,13,'2026-10-15 23:59:30',NULL),
-(15,3,14,'2026-10-15 23:59:30',NULL),
-(16,3,15,'2026-10-15 23:59:30',NULL),
-(17,3,16,'2026-10-15 23:59:30',NULL),
-(18,3,17,'2026-10-15 23:59:30',NULL),
-(19,3,18,'2026-10-15 23:59:30',NULL),
-(20,4,19,'2026-10-15 23:59:30',NULL),
-(21,4,20,'2026-10-15 23:59:30',NULL),
-(22,4,21,'2026-10-15 23:59:30',NULL),
-(23,4,22,'2026-10-15 23:59:30',NULL),
-(24,4,23,'2026-10-15 23:59:30',NULL),
-(25,4,24,'2026-10-15 23:59:30',NULL),
-(26,5,25,'2026-10-15 23:59:30',NULL),
-(27,5,26,'2026-10-15 23:59:30',NULL),
-(28,5,27,'2026-10-15 23:59:30',NULL),
-(29,5,28,'2026-10-15 23:59:30',NULL),
-(30,5,29,'2026-10-15 23:59:30',NULL);
-/*!40000 ALTER TABLE `GAME-TRACKS` ENABLE KEYS */;
+LOCK TABLES `GAMES-FEATURES` WRITE;
+/*!40000 ALTER TABLE `GAMES-FEATURES` DISABLE KEYS */;
+INSERT INTO `GAMES-FEATURES` VALUES
+(1,1,'Mundo abierto','Sí, mapa de México','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(2,1,'Motor gráfico','ForzaTech Engine','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(3,1,'Gráficos','4K HDR','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(4,1,'Jugadores','Multijugador online','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(5,1,'Clima dinámico','Sí, 4 estaciones','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(6,2,'Modo de juego','Carreras callejeras','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(7,2,'Ciclo día/noche','Sí','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(8,2,'Personalización','Visual y de rendimiento','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(9,2,'Persecuciones','Policía activa','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(10,2,'Gráficos','4K, Frostbite Engine','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(11,3,'Simulación','Conducción realista','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(12,3,'Modo foto','Modo Scapes','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(13,3,'Multijugador','Modo Sport online','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(14,3,'Catálogo de autos','Más de 400 vehículos','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(15,3,'Realidad virtual','Soporte PlayStation VR2','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(16,4,'Simulación','Física muy realista','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(17,4,'Mods','Amplio soporte de mods','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(18,4,'Realidad virtual','Sí, compatible VR','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(19,4,'Multijugador','Servidores dedicados','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(20,4,'Telemetría','Avanzada para análisis','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(21,5,'Mundo abierto','Sí, Islas de Hawái','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(22,5,'Actividades','Pruebas de licencia','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(23,5,'Personalización','Vehículos y tuning','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(24,5,'Modos','PvP y cooperativo','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(25,5,'Mapa','Calles, tierra y mar','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL);
+/*!40000 ALTER TABLE `GAMES-FEATURES` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
@@ -339,8 +219,7 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `GAME_CATEGORIES` WRITE;
 /*!40000 ALTER TABLE `GAME_CATEGORIES` DISABLE KEYS */;
 INSERT INTO `GAME_CATEGORIES` VALUES
-(1,'Juegos de carreras','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(2,'Juegos de simulacion (retirada)','2026-10-08 02:09:58','2026-10-08 02:09:58','2026-10-08 02:09:58',NULL,NULL);
+(1,'Juegos de carreras','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL);
 /*!40000 ALTER TABLE `GAME_CATEGORIES` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
@@ -355,6 +234,7 @@ DROP TABLE IF EXISTS `TRACKS`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `TRACKS` (
   `Tracks-id` int(11) NOT NULL,
+  `id-game-car` int(11) DEFAULT NULL,
   `Track-name` varchar(250) NOT NULL,
   `Location` varchar(500) DEFAULT NULL,
   `Track-type` varchar(50) NOT NULL,
@@ -365,7 +245,9 @@ CREATE TABLE `TRACKS` (
   `Deleted-at` timestamp NULL DEFAULT NULL,
   `Created-by` varchar(250) DEFAULT NULL,
   `Updated-by` varchar(250) DEFAULT NULL,
-  PRIMARY KEY (`Tracks-id`)
+  PRIMARY KEY (`Tracks-id`),
+  KEY `TRACKS_games_FK` (`id-game-car`),
+  CONSTRAINT `TRACKS_games_FK` FOREIGN KEY (`id-game-car`) REFERENCES `games` (`id-game-car`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -377,37 +259,115 @@ SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `TRACKS` WRITE;
 /*!40000 ALTER TABLE `TRACKS` DISABLE KEYS */;
 INSERT INTO `TRACKS` VALUES
-(1,'Gran Caldera','Volcan Gran Caldera, Baja California','Rally',6,'Dificil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(2,'Baja Off-Road','Desierto de Baja California','Cross Country',12,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(3,'Horizon Festival','Playa de Torre Vieja','Circuito',3,'Facil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(4,'Sierra Morena Sprint','Sierra Morena','Sprint',7,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(5,'Valle de Guanajuato','Guanajuato','Urbano',4,'Dificil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(6,'Playa Muerta','Costa de Baja California','Rally',8,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(7,'Circuito Palm City','Centro de Palm City','Urbano',4,'Facil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(8,'Puerto de Murphy','Puerto de Murphy, Palm City','Urbano',5,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(9,'Autopista de la Costa','Autopista costera de Palm City','Autopista',15,'Facil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(10,'Ruta de la Montana','Montanas de Palm City','Montana',9,'Dificil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(11,'Periferico Nocturno','Anillo de Palm City','Circuito',6,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(12,'Suzuka','Suzuka, Japon','Circuito',6,'Dificil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(13,'Spa-Francorchamps','Belgica','Circuito',7,'Dificil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(14,'Nurburgring Nordschleife','Alemania','Circuito',21,'Muy dificil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(15,'Autodromo de Monza','Italia','Circuito',6,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(16,'Trial Mountain','Circuito ficticio','Circuito',6,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(17,'Deep Forest Raceway','Circuito ficticio','Circuito',4,'Facil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(18,'Dragon Trail','Circuito ficticio','Circuito',7,'Dificil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(19,'Monza','Italia','Circuito',6,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(20,'Nurburgring','Alemania','Circuito',26,'Muy dificil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(21,'Spa-Francorchamps','Belgica','Circuito',7,'Dificil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(22,'Silverstone','Gran Bretana','Circuito',6,'Dificil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(23,'Barcelona-Catalunya','Espana','Circuito',5,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(24,'Brands Hatch','Gran Bretana','Circuito',4,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(25,'Honolulu City','Honolulu, Oahu','Urbano',5,'Facil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(26,'Diamond Head','Diamond Head, Honolulu','Sprint',4,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(27,'North Shore Coastal','Costa norte de Oahu','Sprint',10,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(28,'Haleakala Ascent','Volcan Haleakala, Maui','Montana',14,'Dificil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(29,'Kailua Beach Circuit','Kailua, Oahu','Circuito',6,'Facil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
-(30,'Circuito Retirado','Circuito fuera de servicio del calendario','Circuito',5,'Facil','2026-10-08 02:09:58','2026-10-08 02:09:58','2026-10-08 02:09:58',NULL,NULL);
+(1,1,'Gran Caldera','Volcán Gran Caldera, Baja California','Rally',6,'Difícil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(2,1,'Baja Off-Road','Desierto de Baja California','Cross Country',12,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(3,1,'Horizon Festival','Playa de Torre Vieja','Circuito',3,'Fácil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(4,1,'Sierra Morena Sprint','Sierra Morena','Sprint',7,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(5,1,'Valle de Guanajuato','Guanajuato','Urbano',4,'Difícil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(6,1,'Playa Muerta','Costa de Baja California','Rally',8,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(7,2,'Circuito Palm City','Centro de Palm City','Urbano',4,'Fácil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(8,2,'Puerto de Murphy','Puerto de Murphy, Palm City','Urbano',5,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(9,2,'Autopista de la Costa','Autopista costera de Palm City','Autopista',15,'Fácil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(10,2,'Ruta de la Montaña','Montañas de Palm City','Montaña',9,'Difícil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(11,2,'Periférico Nocturno','Anillo de Palm City','Circuito',6,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(12,3,'Suzuka','Suzuka, Japón','Circuito',6,'Difícil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(13,3,'Spa-Francorchamps','Bélgica','Circuito',7,'Difícil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(14,3,'Nürburgring Nordschleife','Alemania','Circuito',21,'Muy difícil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(15,3,'Autodromo de Monza','Italia','Circuito',6,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(16,3,'Trial Mountain','Circuito ficticio','Circuito',6,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(17,3,'Deep Forest Raceway','Circuito ficticio','Circuito',4,'Fácil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(18,3,'Dragon Trail','Circuito ficticio','Circuito',7,'Difícil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(19,4,'Monza','Italia','Circuito',6,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(20,4,'Nürburgring','Alemania','Circuito',26,'Muy difícil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(21,4,'Spa-Francorchamps','Bélgica','Circuito',7,'Difícil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(22,4,'Silverstone','Gran Bretaña','Circuito',6,'Difícil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(23,4,'Barcelona-Catalunya','España','Circuito',5,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(24,4,'Brands Hatch','Gran Bretaña','Circuito',4,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(25,5,'Honolulu City','Honolulu, Oahu','Urbano',5,'Fácil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(26,5,'Diamond Head','Diamond Head, Honolulu','Sprint',4,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(27,5,'North Shore Coastal','Costa norte de Oahu','Sprint',10,'Media','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(28,5,'Haleakalā Ascent','Volcán Haleakalā, Maui','Montaña',14,'Difícil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL),
+(29,5,'Kailua Beach Circuit','Kailua, Oahu','Circuito',6,'Fácil','2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL);
 /*!40000 ALTER TABLE `TRACKS` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `USER`
+--
+
+DROP TABLE IF EXISTS `USER`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `USER` (
+  `User-id` int(11) NOT NULL,
+  `Username` varchar(100) NOT NULL,
+  `Email` varchar(250) NOT NULL,
+  `Password_hash` varchar(250) NOT NULL,
+  `Full-name` varchar(250) NOT NULL,
+  `role` varchar(50) NOT NULL,
+  `Is-activate` tinyint(1) NOT NULL,
+  `last-login` timestamp NULL DEFAULT NULL,
+  `Create-at` timestamp NOT NULL,
+  `Updated-at` timestamp NOT NULL,
+  `Deleted-at` timestamp NULL DEFAULT NULL,
+  `Created-by` varchar(250) DEFAULT NULL,
+  `Updated-by` varchar(250) DEFAULT NULL,
+  PRIMARY KEY (`User-id`),
+  UNIQUE KEY `USER_UNIQUE` (`Username`),
+  UNIQUE KEY `USER_UNIQUE_1` (`Email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `USER`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `USER` WRITE;
+/*!40000 ALTER TABLE `USER` DISABLE KEYS */;
+/*!40000 ALTER TABLE `USER` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `USER-GAMES`
+--
+
+DROP TABLE IF EXISTS `USER-GAMES`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `USER-GAMES` (
+  `User-game-id` int(11) NOT NULL AUTO_INCREMENT,
+  `User-id` int(11) NOT NULL,
+  `id-game-car` int(11) NOT NULL,
+  `status` varchar(50) NOT NULL DEFAULT 'Jugando',
+  `completion_percentage` decimal(5,2) DEFAULT 0.00,
+  `playtime_hours` decimal(8,2) DEFAULT 0.00,
+  `favorite` tinyint(1) NOT NULL DEFAULT 0,
+  `added_at` timestamp NULL DEFAULT current_timestamp(),
+  `Updated-at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `Deleted-at` timestamp NULL DEFAULT NULL,
+  `Created-by` varchar(250) DEFAULT NULL,
+  `Updated-by` varchar(250) DEFAULT NULL,
+  PRIMARY KEY (`User-game-id`),
+  UNIQUE KEY `uq_user_game` (`User-id`,`id-game-car`),
+  KEY `fk_usergames_game` (`id-game-car`),
+  CONSTRAINT `fk_usergames_game` FOREIGN KEY (`id-game-car`) REFERENCES `games` (`id-game-car`) ON DELETE CASCADE,
+  CONSTRAINT `fk_usergames_user` FOREIGN KEY (`User-id`) REFERENCES `USER` (`User-id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `USER-GAMES`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `USER-GAMES` WRITE;
+/*!40000 ALTER TABLE `USER-GAMES` DISABLE KEYS */;
+/*!40000 ALTER TABLE `USER-GAMES` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
@@ -473,15 +433,15 @@ INSERT INTO `games` VALUES
 (2,'Need for Speed Heat','Juego de carreras callejeras con persecuciones policiales y personalizacion de autos.','2019-11-08',999,'Ghost Games','Electronic Arts','T','PlayStation, Xbox y PC','Individual y multijugador',1,'2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL,NULL,NULL,NULL),
 (3,'Gran Turismo 7','Simulador de carreras con autos deportivos, circuitos y configuracion avanzada.','2022-03-04',1499,'Polyphony Digital','Sony Interactive Entertainment','E','PlayStation 4 y PlayStation 5','Individual y multijugador',1,'2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL,NULL,NULL,NULL),
 (4,'Assetto Corsa','Simulador de conduccion enfocado en el realismo y el comportamiento de los vehiculos.','2014-12-19',599,'Kunos Simulazioni','505 Games','E','PlayStation, Xbox y PC','Individual y multijugador',1,'2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL,NULL,NULL,NULL),
-(5,'The Crew Motorfest','Videojuego de carreras de mundo abierto con diferentes tipos de vehiculos y eventos.','2023-09-14',1299,'Ubisoft Ivory Tower','Ubisoft','T','PlayStation, Xbox y PC','Individual y multijugador',1,'2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL,NULL,NULL,NULL),
-(6,'Proyecto Cancelado','Juego de carreras cancelado antes de su lanzamiento.','2026-01-15',0,'Estudio Cancelado','Sin publicar','E','PC','Individual',1,'2026-10-08 02:09:58','2026-10-08 02:09:58','2026-10-08 02:09:58',NULL,NULL,NULL,NULL,NULL),
-(7,'Test Drive Unlimited','Carreras de mundo abierto en Hawái','2006-09-05',499,'Eden Games','Atari','E','PC','Individual y multijugador',1,'2026-10-15 01:54:56','2026-10-15 02:31:57',NULL,NULL,NULL,NULL,NULL,NULL),
-(8,'Need for Speed Unbound','Carreras callejeras con estilo graffiti','2022-12-02',1299,'Criterion Games','Electronic Arts','T','PC','Individual y multijugador',1,'2026-10-15 02:29:37','2026-10-15 02:29:37',NULL,NULL,NULL,NULL,NULL,NULL),
-(9,'Need for Speed Unbound','Carreras callejeras con estilo graffiti','2022-12-02',1299,'Criterion Games','Electronic Arts','T','PC','Individual y multijugador',1,'2026-10-15 02:34:47','2026-10-15 02:34:47',NULL,NULL,NULL,NULL,NULL,NULL);
+(5,'The Crew Motorfest','Videojuego de carreras de mundo abierto con diferentes tipos de vehiculos y eventos.','2023-09-14',1299,'Ubisoft Ivory Tower','Ubisoft','T','PlayStation, Xbox y PC','Individual y multijugador',1,'2026-09-19 04:20:02','2026-09-19 04:20:02',NULL,NULL,NULL,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `games` ENABLE KEYS */;
 UNLOCK TABLES;
 COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Dumping routines for database 'Car_2'
+--
 
 --
 -- Current Database: `Car_2`
@@ -501,7 +461,6 @@ USE `Car_2`;
 /*!50001 SET character_set_results     = utf8mb4 */;
 /*!50001 SET collation_connection      = utf8mb4_uca1400_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
 /*!50001 VIEW `estante` AS select `g`.`id-game-car` AS `game_id`,`g`.`Title` AS `Title`,concat(left(`g`.`Desc`,50),if(char_length(`g`.`Desc`) > 50,'...','')) AS `Desc_resumen`,`c`.`Name` AS `Categoria`,`g`.`Image-portada` AS `Image_portada` from (`games` `g` left join `GAME_CATEGORIES` `c` on(`g`.`Categori-id` = `c`.`Categori-id`)) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
@@ -516,4 +475,4 @@ USE `Car_2`;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2026-10-15 18:12:40
+-- Dump completed on 2026-09-25 21:14:30

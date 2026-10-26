@@ -1,18 +1,22 @@
 {
   "name": "games-cars",
   "version": "1.0.0",
-  "description": "API REST de catálogo de videojuegos/coches con Node.js + Express + MySQL. Incluye CRUD completo, borrado lógico, restauración y búsquedas por nombre/descripción.",
-  "main": "src/app.ts",
+  "description": "API REST del catalogo de videojuegos games-cars con Express, TypeScript y TypeORM sobre MariaDB/MySQL.",
+  "main": "dist/app.js",
   "scripts": {
+    "build": "tsc",
     "start": "ts-node src/app.ts",
-    "dev": "node --watch -r ts-node/register src/app.ts"
+    "start:prod": "node dist/app.js",
+    "dev": "node --watch -r ts-node/register src/app.ts",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "express",
+    "typeorm",
+    "typescript",
     "mysql",
     "crud",
-    "rest",
-    "catalogo"
+    "rest"
   ],
   "author": "Desarrollo Web",
   "license": "MIT",

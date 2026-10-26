@@ -1,131 +1,74 @@
 ============================================================================
  games-cars · Resumen de pruebas
- Fecha: 2026-10-15
- Entorno: Node.js v26.11.1 · Express 4.22.3 · mysql2 3.24.5 · MariaDB 13.0.2
- Base de datos: Car_2 (activa y poblada)
+ Fecha: 2026-10-25
+ Entorno: Node.js 26.11.1 · TypeScript 6.0.3 · TypeORM 1.1.2 ·
+          Express 4.22 · MariaDB 13.0.2
 ============================================================================
 
-NOTA: este resumen sustituye al del 5 oct 2026, que describía un esquema y una
-API anteriores (vista_estante, car_2, búsquedas con GET ?q=). Las capturas
-(.png) sí siguen siendo del 5 oct y muestran aquella versión.
+BASE DE DATOS
+------------------------------------------------------------------------------
+[OK] bdDump.sql se importa completo y sin errores (exit 0).
+[OK] Crea la base Car_2 y la deja POBLADA:
+       games ............ 5 filas
+       GAME_CATEGORIES .. 1 fila
+       TRACKS ........... 29 filas
+       GAMES-FEATURES ... 25 filas
+       estante (vista) .. 5 filas
+[OK] El dump no fija DEFINER en la vista: se puede importar con cualquier
+     usuario que tenga permisos sobre la base.
 
-----------------------------------------------------------------------------
-1. BASE DE DATOS
-----------------------------------------------------------------------------
-[OK] Base Car_2 poblada:
-       games ............ 9 filas (5 activas; 6, 7, 8 y 9 con borrado lógico)
-       GAME_CATEGORIES .. 1 activa
-       TRACKS ........... 30 filas (29 activas)
-       FEATURES ......... 25 filas
-       CAR .............. 15 filas
-       GAME-TRACKS ...... 29 vínculos
-       GAME-CARS ........ 15 vínculos (3 coches por juego)
-       estante .......... vista (games ⋈ GAME_CATEGORIES)
-[OK] Borrado lógico de ejemplo: juego 6 "Proyecto Cancelado" (07 oct) y los
-     juegos 7, 8 y 9 (15 oct, a petición).
-[OK] Pista duplicada detectada: "Spa-Francorchamps" está DOS veces en el
-     catálogo TRACKS (ids 13 y 21), una copia por juego. Pendiente de
-     normalizar (Fase 6 del plan).
+MÓDULOS EN TYPESCRIPT
+------------------------------------------------------------------------------
+[OK] Todo src/ es TypeScript: app.ts, data-source.ts, 4 entidades,
+     5 rutas y utils/http.ts. No queda código .js en el proyecto.
+[OK] npm run typecheck (tsc --noEmit) termina sin errores.
+[OK] npm run build genera dist/ y npm run start:prod ejecuta la versión
+     compilada.
+[OK] Las rutas usan repositorios de TypeORM y transacciones para las
+     operaciones con tablas relacionadas.
 
-----------------------------------------------------------------------------
-2. LAS 6 RUTAS MONTADAS RESPONDEN
-----------------------------------------------------------------------------
-[OK] GET /api/games ........... 200
-[OK] GET /api/tracks .......... 200
-[OK] GET /api/features ........ 200
-[OK] GET /api/cars ............ 200
-[OK] GET /api/categories ...... 200
-[OK] GET /api/estante ......... 200
-     Total de endpoints en el código: 44
+CATÁLOGO CON CRUD COMPLETO
+------------------------------------------------------------------------------
+[OK] games      GET /, /todos, /:id, búsquedas, POST, PUT, DELETE y PATCH
+[OK] categories GET /, /todos, /:id, búsqueda, POST, PUT, DELETE y PATCH
+[OK] tracks     GET /, /todos, /:id, búsquedas, POST, PUT, DELETE y PATCH
+[OK] features   GET /, /todos, /:id, POST, PUT, DELETE y PATCH
+[OK] estante    GET / (vista de solo lectura)
 
-----------------------------------------------------------------------------
-3. BUG CRÍTICO: CORREGIDO (era del 15 oct)
-----------------------------------------------------------------------------
-[ANTES] POST /api/games/buscarNm con body {} => TypeError y EL PROCESO DE
-        NODE MORÍA (HTTP sin respuesta, API caída para todos). Causa:
-        nombre.trim() fuera del try/catch; Express 4 no atrapa las promesas
-        rechazadas de un handler async.
-[FIX]   Normalizar antes de validar:
-        String((req.body ?? {}).nombre ?? "").trim()
-        + manejador de errores global en app.js.
-[OK] Las 5 búsquedas con body {} devuelven 400 (con mensaje) y el servidor
-     SIGUE VIVO:
-       games/buscarNm ..... 400
-       games/buscarDesc ... 400
-       categories/buscar .. 400
-       tracks/buscarNm .... 400
-       tracks/buscarDesc .. 400
-[OK] POST sin body ni Content-Type => 400 (no rompe el proceso).
+BORRADO LÓGICO Y RESTAURACIÓN
+------------------------------------------------------------------------------
+[OK] DELETE guarda Deleted-at y el registro desaparece del listado activo.
+[OK] El registro sigue visible en /todos con su fecha de baja.
+[OK] PATCH .../restaurar devuelve Deleted-at a NULL.
+[OK] Restaurar dos veces el mismo registro responde 404.
 
-----------------------------------------------------------------------------
-4. API SIN ARGUMENTOS: EL ID VA EN EL BODY  (cambio del 15 oct)
-----------------------------------------------------------------------------
-[OK] 23 endpoints convertidos; se eliminaron las versiones con :id.
-[OK] 0 usos de req.params y 0 de req.query en todo src/.
-[OK] Las rutas viejas devuelven 404 "Ruta no encontrada":
-       GET   /api/games/1
-       GET   /api/tracks/1
-       GET   /api/features/1
-       GET   /api/cars/1
-       GET   /api/categories/1
-       GET   /api/games/1/tracks
-       GET   /api/games/1/features
-       GET   /api/tracks/1/games
-       PUT   /api/tracks/1
-       PATCH /api/tracks/1/restaurar
+RELACIONES Y TRANSACCIONES
+------------------------------------------------------------------------------
+[OK] POST /api/games guarda el juego, sus pistas y sus características en
+     una sola transacción (si algo falla, no queda nada a medias).
+[OK] PUT /api/games reemplaza las pistas y características activas: tras
+     enviar 2 pistas nuevas, el juego queda con 2 pistas activas y las
+     anteriores con Deleted-at.
 
-  GET /:id            -> POST /buscarPorId      body {"<pk>": N}
-  PUT /:id            -> PUT    /               body {"<pk>": N, ...campos}
-  DELETE /:id         -> DELETE /               body {"<pk>": N}
-  PATCH /:id/restaurar-> PATCH  /restaurar      body {"<pk>": N}
-  Relaciones          -> POST /buscarTracks · /buscarFeatures · /buscarJuegos
+VALIDACIONES
+------------------------------------------------------------------------------
+[OK] POST /api/games sin campos obligatorios -> 400.
+[OK] GET /api/games/9999 -> 404 (Juego no encontrado).
+[OK] Ruta inexistente -> 404 en JSON.
+[OK] Parámetro q vacío en las búsquedas -> 400.
 
-  Llaves por recurso: games=id-game-car · tracks=Tracks-id ·
-  features=Features-id · cars=Game-car-id · categories=Categori-id
+RESULTADO
+------------------------------------------------------------------------------
+[OK] 39 comprobaciones correctas, 0 fallidas
+     (bash pruebas/pruebas-api.sh, base recién importada).
 
-[OK] buscarPorId en los 5 recursos: 200 con id correcto, 400 sin id,
-     404 con id inexistente.
-[OK] Relaciones (id en el body):
-       POST /api/games/buscarTracks   {"id-game-car":1} => 6 pistas
-       POST /api/games/buscarFeatures {"id-game-car":1} => 5 características
-       POST /api/tracks/buscarJuegos  {"Tracks-id":13}  => Gran Turismo 7
-       POST /api/tracks/buscarJuegos  {"Tracks-id":999} => [] (sin vínculos)
-[OK] Ciclo CRUD completo con el id en el body, sobre un registro temporal
-     (creado, actualizado, borrado lógico y restaurado) y luego eliminado de
-     la base para no dejar residuos.
-
-----------------------------------------------------------------------------
-5. BÚSQUEDAS POR TEXTO (POST + body)
-----------------------------------------------------------------------------
-[OK] POST /api/games/buscarNm    {"nombre":"forza"}       => 200
-[OK] POST /api/games/buscarDesc  {"descripcion":"mundo"}  => 200
-[OK] POST /api/categories/buscar {"nombre":"juegos"}      => 200
-[OK] POST /api/tracks/buscarNm   {"nombre":"circuito"}    => 200 (Circuito Palm City)
-[OK] POST /api/tracks/buscarDesc {"descripcion":"japon"}  => 200 (Suzuka, Japón)
-[OK] El texto se normaliza con trim(): {"nombre":"  suzuka  "} funciona.
-
-----------------------------------------------------------------------------
-6. CRUD CON BORRADO LÓGICO
-----------------------------------------------------------------------------
-[OK] GET /:recurso          lista los activos (Deleted-at IS NULL)
-[OK] GET /:recurso/todos    incluye los eliminados
-[OK] POST /:recurso         crea (201)
-[OK] PUT /:recurso          actualiza (id en el body)
-[OK] DELETE /:recurso       borrado LÓGICO (id en el body)
-[OK] PATCH /:recurso/restaurar  restaura (id en el body)
-
-----------------------------------------------------------------------------
-7. RESULTADO GLOBAL
-----------------------------------------------------------------------------
-[OK] node --check en los 9 ficheros .js: sin errores.
-[OK] Batería automatizada: 46 aserciones, 0 fallos.
-[OK] Antes de este cambio se hizo respaldo:
-     games-cars-backup-20261015-1948.tar.gz (src/ + README.md + bdDump.sql)
-
-PENDIENTE (plan de corrección, ver Plan de correccion - games-cars.md):
- - Fases 1-5: que las relaciones (Pistas / Features / Coches / Juegos) vengan
-   en la misma llamada, con JSON_ARRAYAGG + una subconsulta por relación.
- - Fase 6: normalizar "Spa-Francorchamps" (una pista, dos juegos).
- - Fase 7: capturas nuevas (las .png son del 5 oct), corregir el filtro de la
-   vista estante y regenerar bdDump.sql.
+EVIDENCIAS
+------------------------------------------------------------------------------
+Las capturas de evidencias/ se generaron con respuestas reales del API:
+  1. evidencia-1-api-games.png ............... estado y catálogo games
+  2. evidencia-2-crud-games.png .............. POST, PUT, DELETE, PATCH
+  3. evidencia-3-crud-categories.png ......... CRUD de categories
+  4. evidencia-4-crud-tracks-features.png .... CRUD de tracks y features
+  5. evidencia-5-vista-estante-validaciones.png  vista estante, 400 y 404
+  6. evidencia-6-typescript-typeorm.png ...... typecheck y módulos .ts
 ============================================================================

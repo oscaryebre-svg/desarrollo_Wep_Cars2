@@ -1,6 +1,6 @@
 ============================================================================
  games-cars · Resumen de pruebas
- Fecha: 2026-10-25
+ Fecha: 2026-10-28
  Entorno: Node.js 26.11.1 · TypeScript 6.0.3 · TypeORM 1.1.2 ·
           Express 4.22 · MariaDB 13.0.2
 ============================================================================
@@ -13,14 +13,16 @@ BASE DE DATOS
        GAME_CATEGORIES .. 1 fila
        TRACKS ........... 29 filas
        GAMES-FEATURES ... 25 filas
+       CAR .............. 15 filas
+       GAME-CARS ........ 15 filas
        estante (vista) .. 5 filas
 [OK] El dump no fija DEFINER en la vista: se puede importar con cualquier
      usuario que tenga permisos sobre la base.
 
 MÓDULOS EN TYPESCRIPT
 ------------------------------------------------------------------------------
-[OK] Todo src/ es TypeScript: app.ts, data-source.ts, 4 entidades,
-     5 rutas y utils/http.ts. No queda código .js en el proyecto.
+[OK] Todo src/ es TypeScript: app.ts, data-source.ts, 6 entidades,
+     6 rutas y utils/http.ts. No queda código .js en el proyecto.
 [OK] npm run typecheck (tsc --noEmit) termina sin errores.
 [OK] npm run build genera dist/ y npm run start:prod ejecuta la versión
      compilada.
@@ -33,6 +35,7 @@ CATÁLOGO CON CRUD COMPLETO
 [OK] categories GET /, /todos, /:id, búsqueda, POST, PUT, DELETE y PATCH
 [OK] tracks     GET /, /todos, /:id, búsquedas, POST, PUT, DELETE y PATCH
 [OK] features   GET /, /todos, /:id, POST, PUT, DELETE y PATCH
+[OK] cars       GET /, /todos, /:id, búsquedas, POST, PUT, DELETE y PATCH
 [OK] estante    GET / (vista de solo lectura)
 
 BORRADO LÓGICO Y RESTAURACIÓN
@@ -44,11 +47,17 @@ BORRADO LÓGICO Y RESTAURACIÓN
 
 RELACIONES Y TRANSACCIONES
 ------------------------------------------------------------------------------
-[OK] POST /api/games guarda el juego, sus pistas y sus características en
-     una sola transacción (si algo falla, no queda nada a medias).
-[OK] PUT /api/games reemplaza las pistas y características activas: tras
-     enviar 2 pistas nuevas, el juego queda con 2 pistas activas y las
-     anteriores con Deleted-at.
+[OK] POST /api/games guarda el juego, sus pistas, características y autos
+     en una sola transacción (si algo falla, no queda nada a medias).
+[OK] PUT /api/games reemplaza las pistas, características y autos activos:
+     tras enviar 2 pistas nuevas, el juego queda con 2 pistas activas y
+     las anteriores con Deleted-at.
+[OK] GET /api/games y /api/games/:id devuelven tracks, features y cars
+     anidados.
+[OK] POST /api/games/:id/cars vincula autos y DELETE .../cars/:carId los
+     desvincula con borrado lógico.
+[OK] GAME-CARS respeta la llave única (juego, auto): re-vincular un auto
+     reactiva la relación existente en lugar de duplicarla.
 
 VALIDACIONES
 ------------------------------------------------------------------------------
@@ -59,7 +68,7 @@ VALIDACIONES
 
 RESULTADO
 ------------------------------------------------------------------------------
-[OK] 39 comprobaciones correctas, 0 fallidas
+[OK] 64 comprobaciones correctas, 0 fallidas
      (bash pruebas/pruebas-api.sh, base recién importada).
 
 EVIDENCIAS
@@ -70,5 +79,6 @@ Las capturas de evidencias/ se generaron con respuestas reales del API:
   3. evidencia-3-crud-categories.png ......... CRUD de categories
   4. evidencia-4-crud-tracks-features.png .... CRUD de tracks y features
   5. evidencia-5-vista-estante-validaciones.png  vista estante, 400 y 404
-  6. evidencia-6-typescript-typeorm.png ...... typecheck y módulos .ts
+  6. evidencia-6-cars-nm.png ................. CRUD de cars y N:M games-CAR
+  7. evidencia-7-typescript-typeorm.png ...... typecheck y módulos .ts
 ============================================================================

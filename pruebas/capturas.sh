@@ -102,7 +102,18 @@ ejecutar "curl -s -o /dev/null -w '%{http_code}\\n' $BASE/api/games/9999"
 ejecutar "curl -s -o /dev/null -w '%{http_code}\\n' $BASE/api/no-existe"
 
 # ============================================================ 6
-grupo 6 "Módulos en TypeScript y TypeORM"
+grupo 6 "Catálogo cars y relación N:M games ↔ CAR"
+peticion POST "/api/cars" '{"Car-name":"Auto de prueba","Manufacturer":"Equipo","Year":2026,"Car-class":"Concept"}'
+ID_AUTO=$(jq -r '.["Car-id"]' "$ULTIMO")
+peticion GET "/api/cars/$ID_AUTO"
+peticion POST "/api/games/1/cars" "{\"cars\":[{\"Car-id\":$ID_AUTO,\"max-speed\":280,\"Rarity\":\"Rara\",\"Unlockable\":true}]}"
+ejecutar "curl -s $BASE/api/games/1 | jq '{Title, tracks: (.tracks|length), features: (.features|length), cars: [.cars[] | {Car: .[\"Car-name\"], \"max-speed\", Rarity}]}'"
+peticion DELETE "/api/games/1/cars/$ID_AUTO"
+peticion DELETE "/api/cars/$ID_AUTO"
+peticion PATCH "/api/cars/$ID_AUTO/restaurar"
+
+# ============================================================ 7
+grupo 7 "Módulos en TypeScript y TypeORM"
 ejecutar "npm run typecheck --silent && echo 'TypeScript compila sin errores'"
 ejecutar "find src -name '*.ts' | sort"
 ejecutar "jq '{typeorm: .dependencies.typeorm, typescript: .devDependencies.typescript}' package.json"

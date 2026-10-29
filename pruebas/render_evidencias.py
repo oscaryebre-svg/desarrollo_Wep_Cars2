@@ -30,7 +30,8 @@ NOMBRES = {
     3: "evidencia-3-crud-categories.png",
     4: "evidencia-4-crud-tracks-features.png",
     5: "evidencia-5-vista-estante-validaciones.png",
-    6: "evidencia-6-typescript-typeorm.png",
+    6: "evidencia-6-cars-nm.png",
+    7: "evidencia-7-typescript-typeorm.png",
 }
 
 
@@ -101,7 +102,9 @@ def renderizar(entrada: Path, salida: Path) -> None:
 
 
 def main() -> int:
-    directorio = Path(sys.argv[1] if len(sys.argv) > 1 else "/tmp/opencode/capturas-txt")
+    directorio = Path(
+        sys.argv[1] if len(sys.argv) > 1 else "/tmp/opencode/capturas-txt"
+    )
     destino = Path(sys.argv[2] if len(sys.argv) > 2 else "evidencias")
     destino.mkdir(parents=True, exist_ok=True)
 

@@ -123,6 +123,61 @@ peticion GET "/api/games/9999" "" 404
 peticion POST "/api/games" '{}' 400
 peticion GET "/api/no-existe" "" 404
 
+grupo 6 "Catálogo cars con CRUD"
+peticion GET "/api/cars" "" 200
+peticion GET "/api/cars/buscar/nombre?q=toyota" "" 200
+peticion POST "/api/cars" '{"Car-name":"Auto de prueba","Manufacturer":"Equipo","Year":2026,"Car-class":"Concept"}' 201
+ID_AUTO=$(jq -r '.["Car-id"]' "$ULTIMO")
+peticion GET "/api/cars/$ID_AUTO" "" 200
+peticion PUT "/api/cars/$ID_AUTO" '{"Car-name":"Auto de prueba actualizado","Manufacturer":"Equipo","Year":2027,"Car-class":"Concept"}' 200
+peticion DELETE "/api/cars/$ID_AUTO" "" 200
+peticion GET "/api/cars/$ID_AUTO" "" 200
+peticion PATCH "/api/cars/$ID_AUTO/restaurar" "" 200
+peticion PATCH "/api/cars/$ID_AUTO/restaurar" "" 404
+peticion GET "/api/cars/buscar/fabricante?q=equipo" "" 200
+
+grupo 7 "Relación N:M games-CAR y respuestas anidadas"
+peticion GET "/api/games/1" "" 200
+CANTIDAD_PISTAS=$(jq '.tracks | length' "$ULTIMO")
+CANTIDAD_FEATURES=$(jq '.features | length' "$ULTIMO")
+CANTIDAD_AUTOS=$(jq '.cars | length' "$ULTIMO")
+for comprobacion in "pistas:$CANTIDAD_PISTAS" "features:$CANTIDAD_FEATURES" "autos:$CANTIDAD_AUTOS"; do
+  nombre=${comprobacion%%:*}
+  cantidad=${comprobacion##*:}
+  if [ "$cantidad" -gt 0 ]; then
+    pasan=$((pasan + 1))
+  else
+    fallan=$((fallan + 1))
+    printf 'FALLO: GET /api/games/1 no devolvió %s anidadas\n' "$nombre" >&2
+  fi
+done
+
+peticion GET "/api/games/1/tracks" "" 200
+peticion GET "/api/games/1/features" "" 200
+peticion GET "/api/games/1/cars" "" 200
+peticion POST "/api/games/$ID_JUEGO/cars" "{\"cars\":[{\"Car-id\":1,\"max-speed\":300,\"Rarity\":\"Rara\"},{\"Car-id\":$ID_AUTO,\"Unlockable\":true}]}" 201
+peticion GET "/api/games/$ID_JUEGO/cars" "" 200
+CANTIDAD=$(jq 'length' "$ULTIMO")
+if [ "$CANTIDAD" = "2" ]; then
+  pasan=$((pasan + 1))
+else
+  fallan=$((fallan + 1))
+  printf 'FALLO: el POST debía vincular 2 autos y vinculó %s\n' "$CANTIDAD" >&2
+fi
+
+peticion DELETE "/api/games/$ID_JUEGO/cars/1" "" 200
+peticion GET "/api/games/$ID_JUEGO/cars" "" 200
+CANTIDAD=$(jq 'length' "$ULTIMO")
+if [ "$CANTIDAD" = "1" ]; then
+  pasan=$((pasan + 1))
+else
+  fallan=$((fallan + 1))
+  printf 'FALLO: tras desvincular debía quedar 1 auto y quedaron %s\n' "$CANTIDAD" >&2
+fi
+
+peticion POST "/api/games/$ID_JUEGO/cars" '{"Car-id":9999}' 400
+peticion POST "/api/games/9999/cars" '{"Car-id":1}' 404
+
 echo
 echo "Resultado: $pasan pruebas correctas, $fallan fallidas"
 [ "$fallan" -eq 0 ]

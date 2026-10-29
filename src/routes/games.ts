@@ -1,10 +1,12 @@
 import express from "express";
-import { EntityManager, IsNull, Like, Not } from "typeorm";
+import { EntityManager, In, IsNull, Like, Not } from "typeorm";
 
 import { AppDataSource } from "../data-source";
+import { Car } from "../entities/Car";
 import { Category } from "../entities/Category";
 import { Feature } from "../entities/Feature";
 import { Game } from "../entities/Game";
+import { GameCar } from "../entities/GameCar";
 import { Track } from "../entities/Track";
 import {
   camposFaltantes,
@@ -26,25 +28,261 @@ const CAMPOS_OBLIGATORIOS = [
   "Game_mode",
 ];
 
+type EntradaCoche = Record<string, unknown>;
+
+type CocheDelJuego = GameCar & {
+  "Car-name": string | null;
+  Manufacturer: string | null;
+  Year: number | null;
+  "Car-class": string | null;
+};
+
 function repositorio() {
   return AppDataSource.getRepository(Game);
 }
 
-// Une cada juego con el nombre de su categoría, igual que hacía el JOIN
-// original (columna calculada `Categoria`).
-async function conCategoria(juegos: Game[]) {
-  const categorias = await AppDataSource.getRepository(Category).find();
-  const nombres = new Map(
-    categorias.map((categoria) => [categoria["Categori-id"], categoria.Name]),
+function repositorioCoches() {
+  return AppDataSource.getRepository(Car);
+}
+
+// Acepta tanto una lista de ids [1, 2] como una lista de objetos
+// [{ "Car-id": 1, "max-speed": 280 }]. También acepta un solo elemento.
+function normalizarCoches(valor: unknown): EntradaCoche[] {
+  if (valor === undefined || valor === null) {
+    return [];
+  }
+
+  const lista = Array.isArray(valor) ? valor : [valor];
+
+  return lista.map((elemento) => {
+    if (typeof elemento === "number" || typeof elemento === "string") {
+      return { "Car-id": Number(elemento) };
+    }
+
+    return (elemento ?? {}) as EntradaCoche;
+  });
+}
+
+function booleano(valor: unknown): boolean {
+  return (
+    valor === true ||
+    valor === 1 ||
+    valor === "1" ||
+    valor === "true" ||
+    valor === "si"
+  );
+}
+
+function datosCoche(coche: EntradaCoche) {
+  return {
+    "max-speed": (coche["max-speed"] as string) ?? null,
+    Aceleration: (coche.Aceleration as string) ?? null,
+    handling: (coche.handling as string) ?? null,
+    Rarity: (coche.Rarity as string) ?? null,
+    Unlockable: booleano(coche.Unlockable),
+  };
+}
+
+async function validarCoches(coches: EntradaCoche[]): Promise<string | null> {
+  if (coches.length === 0) {
+    return null;
+  }
+
+  const ids = coches.map((coche) => Number(coche["Car-id"]));
+
+  if (ids.some((id) => !Number.isInteger(id) || id <= 0)) {
+    return "Cada coche debe incluir un 'Car-id' entero positivo";
+  }
+
+  const unicos = [...new Set(ids)];
+  const existentes = await repositorioCoches().find({
+    where: { "Car-id": In(unicos), "Deleted-at": IsNull() },
+  });
+
+  if (existentes.length === unicos.length) {
+    return null;
+  }
+
+  const encontrados = new Set(existentes.map((coche) => coche["Car-id"]));
+  const faltantes = unicos.filter((id) => !encontrados.has(id));
+
+  return `No existen o estan eliminados los coches: ${faltantes.join(", ")}`;
+}
+
+// Guarda las relaciones games <-> CAR. Si `reemplazar` es true, las
+// relaciones activas que ya no vienen en la lista se dan de baja lógica.
+// Si una relación ya existía (incluso eliminada), se reactiva y actualiza
+// en lugar de insertar otra, para respetar la llave única (juego, auto).
+async function guardarCoches(
+  manager: EntityManager,
+  idJuego: number,
+  coches: EntradaCoche[],
+  reemplazar: boolean,
+): Promise<void> {
+  const existentes = await manager.find(GameCar, {
+    where: { "id-game-car": idJuego },
+  });
+  const porCoche = new Map(
+    existentes.map((relacion) => [relacion["Car-id"], relacion]),
   );
 
-  return juegos.map((juego) => ({
-    ...juego,
-    Categoria:
-      juego["Categori-id"] === null
-        ? null
-        : (nombres.get(juego["Categori-id"]) ?? null),
-  }));
+  const unicos = new Map<number, EntradaCoche>();
+  for (const coche of coches) {
+    unicos.set(Number(coche["Car-id"]), coche);
+  }
+
+  if (reemplazar) {
+    for (const relacion of existentes) {
+      if (relacion["Deleted-at"] === null && !unicos.has(relacion["Car-id"])) {
+        await manager.update(GameCar, relacion["Game-car-id"], {
+          "Deleted-at": new Date(),
+        });
+      }
+    }
+  }
+
+  for (const [idCoche, coche] of unicos) {
+    const datos = {
+      ...datosCoche(coche),
+      "Deleted-at": null,
+    };
+    const existente = porCoche.get(idCoche);
+
+    if (existente) {
+      await manager.update(GameCar, existente["Game-car-id"], datos);
+    } else {
+      await manager.save(
+        manager.create(GameCar, {
+          "id-game-car": idJuego,
+          "Car-id": idCoche,
+          ...datos,
+        }),
+      );
+    }
+  }
+}
+
+// Une cada juego con su categoría, sus pistas, sus características y sus
+// autos. Es el equivalente a las relaciones anidadas del proyecto de clase.
+async function conRelaciones(juegos: Game[], incluirEliminados = false) {
+  if (juegos.length === 0) {
+    return [];
+  }
+
+  const ids = juegos.map((juego) => juego["id-game-car"]);
+  const idsVisibles = new Set(
+    juegos
+      .filter((juego) => incluirEliminados || juego["Deleted-at"] === null)
+      .map((juego) => juego["id-game-car"]),
+  );
+
+  const wherePistas = incluirEliminados
+    ? { "id-game-car": In(ids) }
+    : { "id-game-car": In(ids), "Deleted-at": IsNull() };
+  const whereCaracteristicas = incluirEliminados
+    ? { "id-game-car": In(ids) }
+    : { "id-game-car": In(ids), "Deleted-at": IsNull() };
+  const whereRelaciones = incluirEliminados
+    ? { "id-game-car": In(ids) }
+    : { "id-game-car": In(ids), "Deleted-at": IsNull() };
+
+  const [categorias, pistas, caracteristicas, relaciones] = await Promise.all([
+    AppDataSource.getRepository(Category).find(),
+    AppDataSource.getRepository(Track).find({ where: wherePistas }),
+    AppDataSource.getRepository(Feature).find({
+      where: whereCaracteristicas,
+    }),
+    AppDataSource.getRepository(GameCar).find({ where: whereRelaciones }),
+  ]);
+
+  const idsCoches = [
+    ...new Set(relaciones.map((relacion) => relacion["Car-id"])),
+  ];
+  const coches = idsCoches.length
+    ? await repositorioCoches().find({
+        where: { "Car-id": In(idsCoches) },
+      })
+    : [];
+
+  const nombresCategoria = new Map(
+    categorias.map((categoria) => [categoria["Categori-id"], categoria.Name]),
+  );
+  const cochesPorId = new Map(coches.map((coche) => [coche["Car-id"], coche]));
+
+  const pistasPorJuego = new Map<number, Track[]>();
+  for (const pista of pistas) {
+    const idJuego = pista["id-game-car"];
+
+    if (idJuego === null || !idsVisibles.has(idJuego)) {
+      continue;
+    }
+
+    const lista = pistasPorJuego.get(idJuego) ?? [];
+    lista.push(pista);
+    pistasPorJuego.set(idJuego, lista);
+  }
+
+  const caracteristicasPorJuego = new Map<number, Feature[]>();
+  for (const caracteristica of caracteristicas) {
+    const idJuego = caracteristica["id-game-car"];
+
+    if (idJuego === null || !idsVisibles.has(idJuego)) {
+      continue;
+    }
+
+    const lista = caracteristicasPorJuego.get(idJuego) ?? [];
+    lista.push(caracteristica);
+    caracteristicasPorJuego.set(idJuego, lista);
+  }
+
+  const relacionesPorJuego = new Map<number, GameCar[]>();
+  for (const relacion of relaciones) {
+    const idJuego = relacion["id-game-car"];
+
+    if (!idsVisibles.has(idJuego)) {
+      continue;
+    }
+
+    const lista = relacionesPorJuego.get(idJuego) ?? [];
+    lista.push(relacion);
+    relacionesPorJuego.set(idJuego, lista);
+  }
+
+  return juegos.map((juego) => {
+    const idJuego = juego["id-game-car"];
+    const cochesDelJuego: CocheDelJuego[] = [];
+
+    for (const relacion of relacionesPorJuego.get(idJuego) ?? []) {
+      const coche = cochesPorId.get(relacion["Car-id"]);
+
+      if (!coche) {
+        continue;
+      }
+
+      if (!incluirEliminados && coche["Deleted-at"] !== null) {
+        continue;
+      }
+
+      cochesDelJuego.push({
+        ...relacion,
+        "Car-name": coche["Car-name"],
+        Manufacturer: coche.Manufacturer,
+        Year: coche.Year,
+        "Car-class": coche["Car-class"],
+      });
+    }
+
+    return {
+      ...juego,
+      Categoria:
+        juego["Categori-id"] === null
+          ? null
+          : (nombresCategoria.get(juego["Categori-id"]) ?? null),
+      tracks: pistasPorJuego.get(idJuego) ?? [],
+      features: caracteristicasPorJuego.get(idJuego) ?? [],
+      cars: cochesDelJuego,
+    };
+  });
 }
 
 async function crearPistas(
@@ -92,23 +330,23 @@ async function crearCaracteristicas(
   }
 }
 
-// Lista los juegos activos con el nombre de su categoría.
+// Lista los juegos activos con categoría, pistas, características y autos.
 router.get("/", async (_req, res) => {
   try {
     const juegos = await repositorio().find({
       where: { "Deleted-at": IsNull() },
     });
 
-    res.json(await conCategoria(juegos));
+    res.json(await conRelaciones(juegos));
   } catch (error) {
     errorServidor(res, "Error al consultar los juegos", error);
   }
 });
 
-// Lista todos los juegos, incluidos los eliminados.
+// Lista todos los juegos (incluidos los eliminados) y todas sus relaciones.
 router.get("/todos", async (_req, res) => {
   try {
-    res.json(await conCategoria(await repositorio().find()));
+    res.json(await conRelaciones(await repositorio().find(), true));
   } catch (error) {
     errorServidor(res, "Error al consultar los juegos", error);
   }
@@ -129,7 +367,7 @@ router.get("/buscar/nombre", async (req, res) => {
       where: { Title: Like(`%${q}%`), "Deleted-at": IsNull() },
     });
 
-    res.json(await conCategoria(juegos));
+    res.json(await conRelaciones(juegos));
   } catch (error) {
     errorServidor(res, "Error al buscar juegos por nombre", error);
   }
@@ -150,13 +388,173 @@ router.get("/buscar/descripcion", async (req, res) => {
       where: { Desc: Like(`%${q}%`), "Deleted-at": IsNull() },
     });
 
-    res.json(await conCategoria(juegos));
+    res.json(await conRelaciones(juegos));
   } catch (error) {
     errorServidor(res, "Error al buscar juegos por descripcion", error);
   }
 });
 
-// Obtiene un juego por su id.
+// Pistas activas de un juego.
+router.get("/:id/tracks", async (req, res) => {
+  const id = idValido(req.params.id);
+
+  if (id === null) {
+    return res.status(400).json({ mensaje: "El id debe ser un numero entero" });
+  }
+
+  try {
+    const juego = await repositorio().findOneBy({ "id-game-car": id });
+
+    if (!juego) {
+      return res.status(404).json({ mensaje: "Juego no encontrado" });
+    }
+
+    const [juegoConRelaciones] = await conRelaciones([juego]);
+
+    res.json(juegoConRelaciones.tracks);
+  } catch (error) {
+    errorServidor(res, "Error al consultar las pistas del juego", error);
+  }
+});
+
+// Características activas de un juego.
+router.get("/:id/features", async (req, res) => {
+  const id = idValido(req.params.id);
+
+  if (id === null) {
+    return res.status(400).json({ mensaje: "El id debe ser un numero entero" });
+  }
+
+  try {
+    const juego = await repositorio().findOneBy({ "id-game-car": id });
+
+    if (!juego) {
+      return res.status(404).json({ mensaje: "Juego no encontrado" });
+    }
+
+    const [juegoConRelaciones] = await conRelaciones([juego]);
+
+    res.json(juegoConRelaciones.features);
+  } catch (error) {
+    errorServidor(
+      res,
+      "Error al consultar las caracteristicas del juego",
+      error,
+    );
+  }
+});
+
+// Autos activos de un juego, con los datos del catálogo CAR.
+router.get("/:id/cars", async (req, res) => {
+  const id = idValido(req.params.id);
+
+  if (id === null) {
+    return res.status(400).json({ mensaje: "El id debe ser un numero entero" });
+  }
+
+  try {
+    const juego = await repositorio().findOneBy({ "id-game-car": id });
+
+    if (!juego) {
+      return res.status(404).json({ mensaje: "Juego no encontrado" });
+    }
+
+    const [juegoConRelaciones] = await conRelaciones([juego]);
+
+    res.json(juegoConRelaciones.cars);
+  } catch (error) {
+    errorServidor(res, "Error al consultar los autos del juego", error);
+  }
+});
+
+// Vincula uno o varios autos a un juego sin reemplazar los existentes.
+router.post("/:id/cars", async (req, res) => {
+  const id = idValido(req.params.id);
+
+  if (id === null) {
+    return res.status(400).json({ mensaje: "El id debe ser un numero entero" });
+  }
+
+  try {
+    const juego = await repositorio().findOneBy({
+      "id-game-car": id,
+      "Deleted-at": IsNull(),
+    });
+
+    if (!juego) {
+      return res.status(404).json({
+        mensaje: "Juego no encontrado o eliminado",
+      });
+    }
+
+    const cuerpo = req.body ?? {};
+    const valor = Array.isArray(cuerpo) ? cuerpo : (cuerpo.cars ?? cuerpo);
+    const coches = normalizarCoches(valor);
+
+    if (coches.length === 0) {
+      return res.status(400).json({
+        mensaje: "Debe indicar al menos un coche para vincular",
+      });
+    }
+
+    const errorCoches = await validarCoches(coches);
+
+    if (errorCoches) {
+      return res.status(400).json({ mensaje: errorCoches });
+    }
+
+    await AppDataSource.transaction(async (manager) => {
+      await guardarCoches(manager, id, coches, false);
+    });
+
+    res.status(201).json({
+      "id-game-car": id,
+      cars: coches.length,
+      mensaje: "Coches vinculados",
+    });
+  } catch (error) {
+    errorServidor(res, "Error al vincular los coches", error);
+  }
+});
+
+// Desvincula (borrado lógico) un auto de un juego.
+router.delete("/:id/cars/:carId", async (req, res) => {
+  const id = idValido(req.params.id);
+  const idCoche = idValido(req.params.carId);
+
+  if (id === null || idCoche === null) {
+    return res
+      .status(400)
+      .json({ mensaje: "Los ids deben ser numeros enteros" });
+  }
+
+  try {
+    const resultado = await AppDataSource.getRepository(GameCar).update(
+      {
+        "id-game-car": id,
+        "Car-id": idCoche,
+        "Deleted-at": IsNull(),
+      },
+      { "Deleted-at": new Date() },
+    );
+
+    if (resultado.affected === 0) {
+      return res.status(404).json({
+        mensaje: "Relacion juego-auto no encontrada o ya estaba eliminada",
+      });
+    }
+
+    res.json({
+      "id-game-car": id,
+      "Car-id": idCoche,
+      mensaje: "Auto desvinculado del juego",
+    });
+  } catch (error) {
+    errorServidor(res, "Error al desvincular el auto", error);
+  }
+});
+
+// Obtiene un juego por su id, con sus relaciones activas.
 router.get("/:id", async (req, res) => {
   const id = idValido(req.params.id);
 
@@ -171,16 +569,16 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ mensaje: "Juego no encontrado" });
     }
 
-    const [conNombre] = await conCategoria([juego]);
+    const [conRelacionesDelJuego] = await conRelaciones([juego]);
 
-    res.json(conNombre);
+    res.json(conRelacionesDelJuego);
   } catch (error) {
     errorServidor(res, "Error al consultar el juego", error);
   }
 });
 
-// Crea un juego. Si el body trae `tracks` o `features`, se guardan en la
-// misma transacción; si algo falla, no queda nada a medias.
+// Crea un juego. Si el body trae `tracks`, `features` o `cars`, se guardan
+// en la misma transacción; si algo falla, no queda nada a medias.
 router.post("/", async (req, res) => {
   const cuerpo = req.body ?? {};
   const faltantes = camposFaltantes(cuerpo, CAMPOS_OBLIGATORIOS);
@@ -192,11 +590,16 @@ router.post("/", async (req, res) => {
   }
 
   const pistas = Array.isArray(cuerpo.tracks) ? cuerpo.tracks : [];
-  const caracteristicas = Array.isArray(cuerpo.features)
-    ? cuerpo.features
-    : [];
+  const caracteristicas = Array.isArray(cuerpo.features) ? cuerpo.features : [];
+  const coches = normalizarCoches(cuerpo.cars);
 
   try {
+    const errorCoches = await validarCoches(coches);
+
+    if (errorCoches) {
+      return res.status(400).json({ mensaje: errorCoches });
+    }
+
     const id = await AppDataSource.transaction(async (manager) => {
       const idJuego = await siguienteId(manager, "games", "id-game-car");
 
@@ -221,6 +624,7 @@ router.post("/", async (req, res) => {
 
       await crearPistas(manager, idJuego, pistas);
       await crearCaracteristicas(manager, idJuego, caracteristicas);
+      await guardarCoches(manager, idJuego, coches, true);
 
       return idJuego;
     });
@@ -230,14 +634,15 @@ router.post("/", async (req, res) => {
       mensaje: "Juego creado",
       tracks: pistas.length,
       features: caracteristicas.length,
+      cars: coches.length,
     });
   } catch (error) {
     errorServidor(res, "Error al crear el juego", error);
   }
 });
 
-// Actualiza un juego. Si el body trae `tracks` o `features`, se dan de baja
-// los anteriores y se guardan los nuevos dentro de la misma transacción.
+// Actualiza un juego. Si el body trae `tracks`, `features` o `cars`, se
+// reemplazan las relaciones activas dentro de la misma transacción.
 router.put("/:id", async (req, res) => {
   const id = idValido(req.params.id);
 
@@ -254,7 +659,15 @@ router.put("/:id", async (req, res) => {
     });
   }
 
+  const coches = normalizarCoches(cuerpo.cars);
+
   try {
+    const errorCoches = await validarCoches(coches);
+
+    if (errorCoches) {
+      return res.status(400).json({ mensaje: errorCoches });
+    }
+
     const juego = await repositorio().findOneBy({ "id-game-car": id });
 
     if (!juego) {
@@ -297,6 +710,10 @@ router.put("/:id", async (req, res) => {
 
         await crearCaracteristicas(manager, id, cuerpo.features);
       }
+
+      if (cuerpo.cars !== undefined) {
+        await guardarCoches(manager, id, coches, true);
+      }
     });
 
     res.json({ "id-game-car": id, mensaje: "Juego actualizado" });
@@ -305,7 +722,9 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Borrado lógico de un juego.
+// Borrado lógico de un juego. Las pistas, características y autos quedan
+// intactos; dejan de mostrarse porque el juego ya no está activo y vuelven
+// a aparecer si el juego se restaura.
 router.delete("/:id", async (req, res) => {
   const id = idValido(req.params.id);
 
@@ -334,7 +753,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// Restaura un juego eliminado.
+// Restaura un juego eliminado. Sus relaciones siguen intactas.
 router.patch("/:id/restaurar", async (req, res) => {
   const id = idValido(req.params.id);
 

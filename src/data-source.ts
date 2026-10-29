@@ -1,9 +1,11 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 
+import { Car } from "./entities/Car";
 import { Category } from "./entities/Category";
 import { Feature } from "./entities/Feature";
 import { Game } from "./entities/Game";
+import { GameCar } from "./entities/GameCar";
 import { Track } from "./entities/Track";
 
 // Los valores por defecto apuntan a una instalación local de MariaDB/MySQL
@@ -16,7 +18,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER ?? "root",
   password: process.env.DB_PASSWORD ?? "",
   database: process.env.DB_NAME ?? "Car_2",
-  entities: [Category, Game, Track, Feature],
+  entities: [Category, Game, Track, Feature, Car, GameCar],
   // El esquema lo define bdDump.sql; TypeORM solo lee y escribe datos.
   synchronize: false,
   logging: false,

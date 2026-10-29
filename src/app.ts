@@ -2,6 +2,7 @@ import express from "express";
 import type { NextFunction, Request, Response } from "express";
 
 import { AppDataSource } from "./data-source";
+import carsRoutes from "./routes/cars";
 import categoriesRoutes from "./routes/categories";
 import estanteRoutes from "./routes/estante";
 import featuresRoutes from "./routes/features";
@@ -23,6 +24,7 @@ app.get("/", (_req, res) => {
       "/api/categories",
       "/api/tracks",
       "/api/features",
+      "/api/cars",
       "/api/estante",
     ],
   });
@@ -32,6 +34,7 @@ app.use("/api/games", gamesRoutes);
 app.use("/api/categories", categoriesRoutes);
 app.use("/api/tracks", tracksRoutes);
 app.use("/api/features", featuresRoutes);
+app.use("/api/cars", carsRoutes);
 app.use("/api/estante", estanteRoutes);
 
 // Rutas inexistentes: 404 en JSON (no HTML de Express).

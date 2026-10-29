@@ -2,22 +2,22 @@
 
 API REST del catálogo de videojuegos **games-cars**, construida con **Node.js + Express + TypeScript + TypeORM** sobre la base de datos **`Car_2`** (MariaDB/MySQL).
 
-Incluye CRUD completo, borrado lógico (`Deleted-at`), restauración y búsquedas por nombre/descripción en los catálogos `games`, `categories` y `tracks`; `features` tiene CRUD sin búsquedas y la vista `estante` es de solo lectura.
+Incluye CRUD completo, borrado lógico (`Deleted-at`), restauración y búsquedas por nombre/descripción en los catálogos `games`, `categories`, `tracks` y `cars`; `features` tiene CRUD sin búsquedas y la vista `estante` es de solo lectura. La relación N:M `games` ↔ `CAR` se administra desde `games` mediante la tabla `GAME-CARS`.
 
 ---
 
 ## Stack
 
-| Pieza       | Versión | Uso                                  |
-| ----------- | ------- | ------------------------------------ |
-| Node.js     | 18+     | Runtime (probado con Node 26)        |
-| Express     | 4.x     | Servidor HTTP                        |
-| TypeScript  | 6.0.3   | Todo el código de `src/` es `.ts`    |
-| TypeORM     | 1.1.2   | Repositorios, transacciones y mapeo  |
-| mysql2      | 3.x     | Driver de MySQL que usa TypeORM      |
-| MariaDB     | 13.x    | Base de datos (compatible MySQL 8)   |
+| Pieza      | Versión | Uso                                 |
+| ---------- | ------- | ----------------------------------- |
+| Node.js    | 18+     | Runtime (probado con Node 26)       |
+| Express    | 4.x     | Servidor HTTP                       |
+| TypeScript | 6.0.3   | Todo el código de `src/` es `.ts`   |
+| TypeORM    | 1.1.2   | Repositorios, transacciones y mapeo |
+| mysql2     | 3.x     | Driver de MySQL que usa TypeORM     |
+| MariaDB    | 13.x    | Base de datos (compatible MySQL 8)  |
 
-No queda código JavaScript en `src/`: la entrada es `src/app.ts` y las cinco rutas están migradas a TypeScript con repositorios de TypeORM.
+No queda código JavaScript en `src/`: la entrada es `src/app.ts` y las seis rutas están migradas a TypeScript con repositorios de TypeORM.
 
 ## Estructura
 
@@ -33,16 +33,19 @@ games-cars/
 │   │   ├── Category.ts         # GAME_CATEGORIES
 │   │   ├── Game.ts             # games
 │   │   ├── Track.ts            # TRACKS
-│   │   └── Feature.ts          # GAMES-FEATURES
+│   │   ├── Feature.ts          # GAMES-FEATURES
+│   │   ├── Car.ts              # CAR
+│   │   └── GameCar.ts          # GAME-CARS (N:M games ↔ CAR)
 │   ├── routes/
-│   │   ├── games.ts
+│   │   ├── games.ts            # games + tracks/features/cars anidados
 │   │   ├── categories.ts
 │   │   ├── tracks.ts
 │   │   ├── features.ts
+│   │   ├── cars.ts
 │   │   └── estante.ts
 │   └── utils/http.ts           # validación, ids y errores comunes
 ├── pruebas/
-│   ├── pruebas-api.sh          # 39 comprobaciones del API
+│   ├── pruebas-api.sh          # 64 comprobaciones del API
 │   ├── capturas.sh             # genera la transcripción de las evidencias
 │   └── render_evidencias.py    # convierte esa transcripción en PNG
 └── evidencias/                 # Capturas del API funcionando
@@ -76,53 +79,68 @@ La conexión por defecto es `localhost:3306`, usuario `root`, sin contraseña y 
 
 El dump crea la base `Car_2` y la deja poblada. Se importa de una sola pasada y sin errores.
 
-| Tabla / vista     | Filas | Contenido                                              |
-| ----------------- | ----: | ------------------------------------------------------ |
-| `games`           |     5 | Catálogo principal de videojuegos                      |
-| `GAME_CATEGORIES` |     1 | Categorías de juego                                    |
-| `TRACKS`          |    29 | Pistas, ligadas a un juego por `id-game-car`           |
-| `GAMES-FEATURES`  |    25 | Características, ligadas a un juego por `id-game-car`  |
-| `estante` (vista) |     5 | JOIN `games` ⋈ `GAME_CATEGORIES` para las tarjetas     |
+| Tabla / vista     | Filas | Contenido                                             |
+| ----------------- | ----: | ----------------------------------------------------- |
+| `games`           |     5 | Catálogo principal de videojuegos                     |
+| `GAME_CATEGORIES` |     1 | Categorías de juego                                   |
+| `TRACKS`          |    29 | Pistas, ligadas a un juego por `id-game-car`          |
+| `GAMES-FEATURES`  |    25 | Características, ligadas a un juego por `id-game-car` |
+| `CAR`             |    15 | Catálogo de autos                                     |
+| `GAME-CARS`       |    15 | Relación N:M `games` ↔ `CAR` con atributos por juego  |
+| `estante` (vista) |     5 | JOIN `games` ⋈ `GAME_CATEGORIES` para las tarjetas    |
 
-El dump conserva además las tablas `CAR`, `GAME-CARS`, `USER` y `USER-GAMES` del diseño original de la materia; esta API no las modifica.
+La API también administra `CAR` y `GAME-CARS`: el catálogo de autos tiene su propio CRUD y la relación N:M se maneja desde los endpoints de `games`. Las tablas `USER` y `USER-GAMES` siguen en el dump sin recurso propio.
 
-El borrado es **lógico**: `DELETE` guarda `Deleted-at = NOW()` y `PATCH .../restaurar` lo vuelve a `NULL`. Las llaves primarias no usan `AUTO_INCREMENT`; el id se calcula con `MAX(columna) + 1` dentro de la misma transacción del `INSERT`.
+El borrado es **lógico**: `DELETE` guarda `Deleted-at = NOW()` y `PATCH .../restaurar` lo vuelve a `NULL`. Las tablas `games`, `GAME_CATEGORIES`, `TRACKS` y `GAMES-FEATURES` no usan `AUTO_INCREMENT`: su id se calcula con `MAX(columna) + 1` dentro de la misma transacción del `INSERT`. `CAR` y `GAME-CARS` sí usan `AUTO_INCREMENT`, así que su llave la genera MariaDB.
 
 ## Endpoints
 
 Cada recurso expone el mismo esquema (salvo `features`, sin búsquedas, y `estante`, solo lectura):
 
-| Método | Ruta                                  | Descripción                              |
-| ------ | ------------------------------------- | ---------------------------------------- |
-| GET    | `/api/<recurso>`                      | Lista los activos (`Deleted-at IS NULL`) |
-| GET    | `/api/<recurso>/todos`                | Lista incluyendo eliminados              |
-| GET    | `/api/<recurso>/buscar/nombre?q=`     | Búsqueda por nombre (si aplica)          |
-| GET    | `/api/<recurso>/buscar/descripcion?q=`| Búsqueda por ubicación/descripción       |
-| GET    | `/api/<recurso>/:id`                  | Obtiene un registro                      |
-| POST   | `/api/<recurso>`                      | Crea (HTTP 201)                          |
-| PUT    | `/api/<recurso>/:id`                  | Actualiza                                |
-| DELETE | `/api/<recurso>/:id`                  | Borrado lógico                           |
-| PATCH  | `/api/<recurso>/:id/restaurar`        | Restaura un registro eliminado           |
+| Método | Ruta                                   | Descripción                              |
+| ------ | -------------------------------------- | ---------------------------------------- |
+| GET    | `/api/<recurso>`                       | Lista los activos (`Deleted-at IS NULL`) |
+| GET    | `/api/<recurso>/todos`                 | Lista incluyendo eliminados              |
+| GET    | `/api/<recurso>/buscar/nombre?q=`      | Búsqueda por nombre (si aplica)          |
+| GET    | `/api/<recurso>/buscar/descripcion?q=` | Búsqueda por ubicación/descripción       |
+| GET    | `/api/<recurso>/:id`                   | Obtiene un registro                      |
+| POST   | `/api/<recurso>`                       | Crea (HTTP 201)                          |
+| PUT    | `/api/<recurso>/:id`                   | Actualiza                                |
+| DELETE | `/api/<recurso>/:id`                   | Borrado lógico                           |
+| PATCH  | `/api/<recurso>/:id/restaurar`         | Restaura un registro eliminado           |
 
-| Recurso           | Tabla             | Busca por nombre  | Busca por descripción |
-| ----------------- | ----------------- | ----------------- | --------------------- |
-| `/api/games`      | `games`           | `Title`           | `Desc`                |
-| `/api/categories` | `GAME_CATEGORIES` | `Name`            | —                     |
-| `/api/tracks`     | `TRACKS`          | `Track-name`      | `Location`            |
-| `/api/features`   | `GAMES-FEATURES`  | —                 | —                     |
-| `/api/estante`    | vista `estante`   | —                 | —                     |
+| Recurso           | Tabla             | Busca por nombre | Busca por texto secundario |
+| ----------------- | ----------------- | ---------------- | -------------------------- |
+| `/api/games`      | `games`           | `Title`          | `Desc`                     |
+| `/api/categories` | `GAME_CATEGORIES` | `Name`           | —                          |
+| `/api/tracks`     | `TRACKS`          | `Track-name`     | `Location`                 |
+| `/api/features`   | `GAMES-FEATURES`  | —                | —                          |
+| `/api/cars`       | `CAR`             | `Car-name`       | `Manufacturer`             |
+| `/api/estante`    | vista `estante`   | —                | —                          |
 
-`POST` y `PUT` de `/api/games` aceptan los arreglos opcionales `tracks` y `features`. Se guardan dentro de la misma transacción que el juego; en el `PUT`, los anteriores se dan de baja lógica y se insertan los nuevos.
+En `cars` el segundo criterio es el fabricante y se consulta con `GET /api/cars/buscar/fabricante?q=`; en `tracks` se usa `GET /api/tracks/buscar/descripcion?q=`.
+
+`/api/games` también expone las relaciones anidadas y la administración de la N:M:
+
+| Método | Ruta                         | Descripción                                        |
+| ------ | ---------------------------- | -------------------------------------------------- |
+| GET    | `/api/games/:id/tracks`      | Pistas activas del juego                           |
+| GET    | `/api/games/:id/features`    | Características activas del juego                  |
+| GET    | `/api/games/:id/cars`        | Autos del juego con sus datos de `CAR`             |
+| POST   | `/api/games/:id/cars`        | Vincula uno o varios autos sin quitar los actuales |
+| DELETE | `/api/games/:id/cars/:carId` | Desvincula (borrado lógico) un auto del juego      |
+
+`POST` y `PUT` de `/api/games` aceptan los arreglos opcionales `tracks`, `features` y `cars`. Se guardan dentro de la misma transacción que el juego; en el `PUT`, las relaciones activas que no vienen en el body se dan de baja lógica. `cars` acepta ids (`[1, 2]`) o registros con atributos de `GAME-CARS` (`[{"Car-id": 1, "max-speed": 300, "Rarity": "Rara"}]`). Las respuestas de `GET /api/games` y `GET /api/games/:id` incluyen `tracks`, `features` y `cars`.
 
 ### Códigos de respuesta
 
-| Código | Cuándo                                                      |
-| ------ | ----------------------------------------------------------- |
-| 200    | Consulta o actualización correcta                           |
-| 201    | Recurso creado                                              |
-| 400    | Faltan campos obligatorios, `q` vacío o id no numérico      |
-| 404    | Recurso o ruta no encontrados                               |
-| 500    | Error del servidor (el detalle queda en la consola)         |
+| Código | Cuándo                                                 |
+| ------ | ------------------------------------------------------ |
+| 200    | Consulta o actualización correcta                      |
+| 201    | Recurso creado                                         |
+| 400    | Faltan campos obligatorios, `q` vacío o id no numérico |
+| 404    | Recurso o ruta no encontrados                          |
+| 500    | Error del servidor (el detalle queda en la consola)    |
 
 Los errores se responden en JSON con `{ "mensaje": "...", "codigo": "..." }` cuando el motor de base de datos entrega un código.
 
@@ -133,7 +151,7 @@ Los errores se responden en JSON con `{ "mensaje": "...", "codigo": "..." }` cua
 curl http://localhost:3000/api/games
 curl "http://localhost:3000/api/games/buscar/nombre?q=forza"
 
-# Crear un juego con una pista y una característica
+# Crear un juego con una pista, una característica y un auto
 curl -X POST http://localhost:3000/api/games \
   -H "Content-Type: application/json" \
   -d '{
@@ -152,8 +170,29 @@ curl -X POST http://localhost:3000/api/games \
     ],
     "features": [
       { "Feature-name": "Modo foto", "Feature-value": "Si" }
+    ],
+    "cars": [
+      { "Car-id": 1, "max-speed": 300, "Rarity": "Rara", "Unlockable": true }
     ]
   }'
+
+# Relaciones anidadas de un juego
+curl http://localhost:3000/api/games/1
+curl http://localhost:3000/api/games/1/tracks
+curl http://localhost:3000/api/games/1/features
+curl http://localhost:3000/api/games/1/cars
+
+# CRUD del catálogo de autos
+curl http://localhost:3000/api/cars
+curl -X POST http://localhost:3000/api/cars \
+  -H "Content-Type: application/json" \
+  -d '{"Car-name":"Auto de prueba","Manufacturer":"Equipo","Year":2026,"Car-class":"Concept"}'
+
+# Vincular y desvincular un auto de un juego
+curl -X POST http://localhost:3000/api/games/1/cars \
+  -H "Content-Type: application/json" \
+  -d '{"Car-id":16,"max-speed":280,"Rarity":"Rara"}'
+curl -X DELETE http://localhost:3000/api/games/1/cars/16
 
 # Actualizar (los campos obligatorios van completos)
 curl -X PUT http://localhost:3000/api/games/6 \
@@ -176,7 +215,7 @@ Con la API corriendo y la base recién importada:
 bash pruebas/pruebas-api.sh
 ```
 
-El script recorre los cinco recursos y comprueba códigos HTTP, búsquedas, borrado lógico, restauración y validaciones (39 comprobaciones). Con la misma base se regeneran las capturas:
+El script recorre los seis recursos y comprueba códigos HTTP, búsquedas, borrado lógico, restauración, relaciones anidadas y la N:M `games` ↔ `CAR` (64 comprobaciones). Con la misma base se regeneran las capturas:
 
 ```bash
 SALIDA=/tmp/capturas bash pruebas/capturas.sh
@@ -190,6 +229,7 @@ Las imágenes de `evidencias/` muestran respuestas reales de la API:
 3. `evidencia-3-crud-categories.png` — CRUD del catálogo `categories`.
 4. `evidencia-4-crud-tracks-features.png` — CRUD de `tracks` y `features`.
 5. `evidencia-5-vista-estante-validaciones.png` — vista `estante` y respuestas 400/404.
-6. `evidencia-6-typescript-typeorm.png` — compilación de TypeScript y módulos del proyecto.
+6. `evidencia-6-cars-nm.png` — CRUD de `cars` y relación N:M `games` ↔ `CAR`.
+7. `evidencia-7-typescript-typeorm.png` — compilación de TypeScript y módulos del proyecto.
 
 `evidencias/resumen-pruebas.txt` resume la importación del dump y las pruebas ejecutadas.
